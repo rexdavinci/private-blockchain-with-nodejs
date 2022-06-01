@@ -82,9 +82,13 @@ class Blockchain {
             // add block to chain
             self.auxiliaryChain = [...self.chain, block]
             // validate chain including block about to be added
-            await self.validateChain() 
-            self.chain.push(block)
-            resolve(block)
+            const invalidChainErrors = await self.validateChain() 
+            if(invalidChainErrors.length === 0) {
+                self.chain.push(block)
+                resolve(block)
+            } else {
+                reject(invalidChainErrors)
+            }
         });
     }
 
@@ -128,7 +132,7 @@ class Blockchain {
             // Get the current time
             const currentTime = parseInt(new Date().getTime().toString().slice(0, -3));
             // Check if the time elapsed is less than 5 minutes
-            if(currentTime > requestTime + 900000) {
+            if(currentTime > requestTime + 300) {
                 reject("Ownership Message Invalid: Time Elapsed!")
             }
             // // Verify the message with wallet address and signature
@@ -150,7 +154,7 @@ class Blockchain {
         let self = this;
         return new Promise((resolve, reject) => {
             // Search on the chain array for the block that has the hash.
-           const block = self.chain.find(block => block.hash === hash)
+           const block = self.chain.find(_block => _block.hash === hash)
            if(!block) {
                reject("Invalid Hash")
            } 
@@ -166,7 +170,7 @@ class Blockchain {
     getBlockByHeight(height) {
         let self = this;
         return new Promise((resolve, reject) => {
-            let block = self.chain.filter(p => p.height === height)[0];
+            let block = self.chain.find(_block => _block.height === height);
             if(block){
                 resolve(block);
             } else {
@@ -228,12 +232,7 @@ class Blockchain {
                     errorLog.push(`Block ${blockIndex} is broken`)
                 }
             }
-            resolve(auxiliaryChain)
-
-            if(errorLog.length > 0) {
-                reject(errorLog)
-            }
-            resolve(true)
+            resolve(errorLog)
         });
     }
 
